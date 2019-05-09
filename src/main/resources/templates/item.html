@@ -1,0 +1,894 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <!-- import CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css"> <!-- #409EFF -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fullPage.js/3.0.2/fullpage.css" />
+    <title>item</title>
+</head>
+<body>
+<div id="app">
+    <div id="fullpage">
+        <div class="section">
+            <el-header style="border-bottom: #409EFF;height:20%">
+                <el-row type="flex" justify="center">
+                    <el-col :span="12">
+                        <el-row :gutter="20">
+                            <el-col :span="4">
+                                <span style="color:#409EFF;font-size: 30px;height: 40px;">智购</span>
+                            </el-col>
+                            <el-col :span='inputLength'>
+                                <el-input prefix-icon="el-icon-search" placeholder="请输入内容" v-model="keyword" @keyup.native.enter="search" clearable></el-input>
+                            </el-col>
+                            <el-col :span="2" :offset="6">
+                                <el-button type="text">清单</el-button>
+                            </el-col>
+                            <el-col :span="2">
+                                <el-button type="text">排行</el-button>
+                            </el-col>
+                        </el-row>
+                    </el-col>
+                </el-row>
+            </el-header>
+            <el-row type="flex" style="height:80%">
+                <el-col :span="20" :offset="2">
+                    <div style="font-size:30px;font-weight:500;padding-bottom:30px;">
+                        <!--<span>{{itemInfo.name.cn}}<span style="color: #909399">（{{itemInfo.name.en}}）</span></span>-->
+                        <span>{{itemInfo.name.cn}}</span>
+                        <!--<img style="float: right; height: 22px" :src="'imgs/markets/' + sessionInfo.sourceMarket + '/logo.png'">-->
+                        <!--<span style="float: right; height: 22px">来源：</span>-->
+                        <!--<el-button type="text" style="float: right;padding: 2px">报错</el-button>-->
+                    </div>
+                    <el-card :body-style="{padding: '20px'}" style="margin-bottom: 30px;">
+
+                        <!-- card header part -->
+                        <!--<div slot="header">-->
+                            <!--&lt;!&ndash;<span>{{itemInfo.name.cn}}<span style="color: #909399">（{{itemInfo.name.en}}）</span></span>&ndash;&gt;-->
+                            <!--<span>{{itemInfo.name.cn}}</span>-->
+                            <!--&lt;!&ndash;<img style="float: right; height: 22px" :src="'imgs/markets/' + sessionInfo.sourceMarket + '/logo.png'">&ndash;&gt;-->
+                            <!--&lt;!&ndash;<span style="float: right; height: 22px">来源：</span>&ndash;&gt;-->
+                            <!--<el-button type="text" style="float: right;padding: 2px">报错</el-button>-->
+                        <!--</div>-->
+
+                        <!-- card body part -->
+                        <div>
+                            <el-row>
+                                <el-col :span="10">
+                                    <el-carousel :interval="10000" indicator-position="outside">
+                                        <el-carousel-item v-for="img in itemInfo.basicImages" :key="img" style="text-align: center"  >
+                                            <img :src='"https://img11.360buyimg.com/n1/s450x450_" + img' height="350">
+                                        </el-carousel-item>
+                                    </el-carousel>
+                                </el-col>
+                                <el-col :span="12" :offset="2">
+                                    <h2 style="color: #ff9900"> ￥{{sessionInfo.price}}</h2>
+                                    <div id="priceChart" style="height: 300px"></div>
+                                </el-col>
+                            </el-row>
+                        </div>
+                    </el-card>
+                </el-col>
+            </el-row>
+        </div>
+        <div class="section">
+            <el-row type="flex">
+                <el-col :span="20" :offset="2">
+                    <div style="font-size:30px;font-weight:500;padding-bottom:30px;">
+                        <span>基本类别的分析 <span style="color: #909399">（价格区间：{{sessionInfo.price - 0.15 * sessionInfo.price}} ~ {{sessionInfo.price + 0.2 * sessionInfo.price}}）</span></span>
+                    </div>
+                    <el-card :body-style="{padding: '20px'}" style="margin-bottom: 50px;">
+                        <!--<div slot="header">-->
+                            <!--<span>基本类别的分析 <span style="color: #909399">（价格区间：{{sessionInfo.price - 0.15 * sessionInfo.price}} ~ {{sessionInfo.price + 0.2 * sessionInfo.price}}）</span></span>-->
+                        <!--</div>-->
+                        <div>
+                            <el-row type="flex" style="align-items: center">
+                                <el-col :span="3">
+                                    <div style="border-right: 1px solid #DCDFE6; height: 150px; text-align: center;">
+                                        <br />
+                                        <span style="text-align: center;">归一化销量排位</span>
+                                        <h2 style="text-align: center; vertical-align: center; color:#409EFF; font-size: xx-large ">#{{rank}} <i :class="Math.round(Math.random()) ? 'el-icon-caret-top' : 'el-icon-caret-bottom'" style="color: #67C23A"></i></h2>
+                                        <!-- #F44336 #F44336 #FFEB3B #409EFF-->
+                                    </div>
+                                </el-col>
+                                <el-col :span="9">
+                                    <div id="totalPriceChart" style="height: 380px; width:100%"></div>
+                                </el-col>
+                                <el-col :span="1">
+                                    <p style="font-size: 50px; font-weight: lighter; color: #909399; text-align: center">+</p>
+                                </el-col>
+                                <el-col :span="10" :offset="1">
+                                    <div id="latestPriceChart" style="height: 380px; width: 100%"></div>
+                                </el-col>
+                            </el-row>
+                        </div>
+                    </el-card>
+                </el-col>
+            </el-row>
+        </div>
+        <div class="section">
+            <el-row type="flex">
+                <el-col :span="20" :offset="2">
+                    <div style="font-size:30px;font-weight:500;padding-bottom:30px;">
+                        <span>基于销量数据的分析 <span style="color: #909399"></span></span>
+                    </div>
+                    <el-card :body-style="{padding: '20px'}" style="margin-bottom: 50px;">
+                        <!--<div slot="header">-->
+                            <!--<span>基于销量数据的分析 <span style="color: #909399"></span></span>-->
+                        <!--</div>-->
+                        <div>
+                            <el-row type="flex" style="align-items: center">
+                                <!--<el-col :span="6">-->
+                                <!--<div id="commentNumber" style="height: 300px; width: 100%"></div>-->
+                                <!--<div style="width:100%;text-align: center">总评价</div>-->
+                                <!--</el-col>-->
+                                <el-col :span="12">
+                                    <div id="colorChoose" style="width:100%;height:400px;">
+                                    </div>
+                                    <div style="width:100%;text-align: center">不同颜色购买数据</div>
+                                </el-col>
+                                <el-col :span="12">
+                                    <div id="configChoose" style="width:100%;height:400px;">
+                                    </div>
+                                    <div style="width:100%;text-align: center">不同配置购买数据</div>
+                                </el-col>
+                            </el-row>
+                        </div>
+                    </el-card>
+                </el-col>
+            </el-row>
+        </div>
+        <div class="section">
+            <el-row type="flex">
+                <el-col :span="20" :offset="2">
+                    <div style="font-size:30px;font-weight:500;padding-bottom:30px;">
+                        <span>基本商品的分析</span>
+                    </div>
+                    <el-card :body-style="{padding: '20px'}" style="margin-bottom: 50px;">
+                        <!--<div slot="header">-->
+                            <!--<span>基本商品的分析</span>-->
+                        <!--</div>-->
+                        <div>
+                            <p style="color: #606266; margin-top: 0">关键特性</p>
+                            <el-row style="border-bottom: 1px solid #DCDFE6; flex-direction: column; flex-wrap: wrap; height: 150px; padding-left: 20px" type="flex">
+                                <el-col :span="12" v-for="(feature, index) in itemInfo.keyFeatures" :key="feature">
+                                    <p  style="margin-bottom: 0">{{index + 1}}. {{feature}}</p>
+                                </el-col>
+                            </el-row>
+                            <p style="color: #606266;">优缺点</p>
+                            <el-row style="padding-left: 20px" type="flex">
+                                <el-col :span="12">
+                                    <p v-for="pro in itemInfo.pros" :key="pro"><i class="el-icon-check" style="color: #67C23A"></i> {{pro}}</p>
+                                </el-col>
+                                <el-col :span="12">
+                                    <p v-for="con in itemInfo.cons" :key="con"><i class="el-icon-close" style="color: #F56C6C"></i> {{con}}</p>
+                                </el-col>
+                            </el-row>
+                        </div>
+                    </el-card>
+                </el-col>
+            </el-row>
+        </div>
+        <div class="section">
+            <el-row type="flex">
+                <el-col :span="20" :offset="2">
+                    <div style="font-size:30px;font-weight:500;padding-bottom:30px;">
+                        <span>基于品牌的分析</span>
+                    </div>
+                    <el-card :body-style="{padding: '20px'}" style="margin-bottom: 50px;">
+                        <!--<div slot="header">-->
+                            <!--<span>基于品牌的分析1</span>-->
+                        <!--</div>-->
+                        <el-row type="flex"  style="align-items: center; padding-bottom: 20px; margin-bottom: 20px">
+                            <el-col :span="6" :offset="1" style="vertical-align: center;">
+                                <img :src="'imgs/brand/' + itemInfo.brand.code + '/logo.svg'" width="200px"/>
+                            </el-col>
+                            <el-col :span="19" style="padding-left: 50px">
+                                <h1>{{itemInfo.brand.cn}} （{{itemInfo.brand.en}}）</h1>
+                                <p>{{itemInfo.brand.introduction}}</p>
+                                <p style="text-align: right; font-style: italic">—— 维基百科</p>
+                                <p>客户总体评分：</p>
+                                <el-rate
+                                        v-model="itemInfo.brand.rate"
+                                        disabled
+                                        show-score
+                                        text-color="#ff9900"
+                                        score-template="{value}"
+                                        style="padding-left: 100px">
+                                </el-rate>
+                            </el-col>
+                        </el-row>
+                    </el-card>
+                </el-col>
+            </el-row>
+        </div>
+        <div class="section">
+            <el-row type="flex">
+                <el-col :span="20" :offset="2">
+                    <div style="font-size:30px;font-weight:500;padding-bottom:30px;">
+                        <span>基本评论的分析——正面评论</span>
+                    </div>
+                    <el-card :body-style="{padding: '20px'}" v-loading="loading"  element-loading-text="正在抓取并分析评论...">
+                        <el-row type="flex" style="align-items: center; padding-bottom: 20px; margin-bottom: 20px; border-bottom: 1px solid #DCDFE6" v-for="(comment,id) in goodComments" :key="id">
+                            <el-col :span="3" :offset="1" >
+                                <span style="color: #409EFF;font-size:16px;margin-right:20px" v-for="(item ,index) in comment.feature" :key="index">{{item}}</span>
+                            </el-col>
+                            <el-col :span="19" :offset="1">
+                                <el-collapse v-model="commentActiveProNames">
+                                    <el-collapse-item v-for="(content, index) in comment.contents" :title="content.title + '...'"  :name="index" :key="index">
+                                        <div v-html="content.all"></div>
+                                    </el-collapse-item>
+                                </el-collapse>
+                            </el-col>
+                        </el-row>
+                    </el-card>
+                </el-col>
+            </el-row>
+        </div>
+        <div class="section">
+            <el-row type="flex">
+                <el-col :span="20" :offset="2">
+                    <div style="font-size:30px;font-weight:500;padding-bottom:30px;">
+                        <span>基本评论的分析——负面评论</span>
+                    </div>
+                    <el-card :body-style="{padding: '20px'}" v-loading="loading"  element-loading-text="正在抓取并分析评论...">
+                        <el-row type="flex" style="align-items: center; padding-bottom: 20px; margin-bottom: 20px; border-bottom: 1px solid #DCDFE6" v-for="comment in badComments" :key="comment.feature">
+                            <el-col :span="3" :offset="1" >
+                                <span style="color: #409EFF;font-size:16px;margin-right:20px" v-for="(item ,index) in comment.feature" :key="index">{{item}}</span>
+                            </el-col>
+                            <el-col :span="19" :offset="1">
+                                <el-collapse v-model="commentActiveConNames">
+                                    <el-collapse-item v-for="(content, index) in comment.contents" :title="content.title + '...'"  :name="index" :key="content.all">
+                                        <div v-html="content.all"></div>
+                                    </el-collapse-item>
+                                </el-collapse>
+                            </el-col>
+                        </el-row>
+                    </el-card>
+                </el-col>
+            </el-row>
+        </div>
+    </div>
+</div>
+</body>
+<!-- import axios -->
+<script src="https://unpkg.com/axios/dist/axios.js"></script>
+<!-- import Vue before Element -->
+<script src="https://unpkg.com/vue/dist/vue.js"></script>
+<!-- import JavaScript -->
+<script src="https://unpkg.com/element-ui/lib/index.js"></script>
+<!-- import ECharts -->
+<script src="https://cdn.bootcss.com/echarts/4.1.0.rc2/echarts.js"></script>
+<!--<script type="text/javascript" src="https://cdnjs.com/libraries/fullPage.js"></script>-->
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/fullPage.js/3.0.2/fullpage.js"></script>
+<script th:inline="javascript">
+    new fullpage('#fullpage', {
+        //options here
+        easing: 'easeInOutCubic',
+        licenseKey: 'OPEN-SOURCE-GPLV3-LICENSE',
+        autoScrolling: false,
+        scrollBar: true
+    });
+    fullpage_api.setAllowScrolling(false);
+    let app = new Vue({
+        el: '#app',
+        data() {
+            return {
+                id: [[${id}]],
+                keyword: [[${keyword}]],
+                inputLength: 10,
+                rank: Math.ceil(Math.random()*10),
+                headerInputShow: true,
+                headerButtonShow: true,
+                commentActiveProNames: [],
+                commentActiveConNames: [],
+                sessionInfo: {
+                    sourceMarket: 'jd',
+                    price: [[${price}]]
+                },
+                fulfilledTags: [
+                    ''
+                ],
+                loading: false,
+                comments: [],
+                goodComments: [
+                    {
+                        feature: [
+                            '质感好',
+                            '像素高',
+                            '指纹解锁',
+                            '面部解锁'
+                        ],
+                        contents: [],
+                        number: 0
+                    },
+                    {
+                        feature: [
+                            '尺寸',
+                            '全面屏',
+                            '自拍',
+                            '夜景'
+                        ],
+                        contents: [],
+                        number: 0
+                    },
+                    {
+                        feature: [
+                            '非常快',
+                            '功能齐全',
+                            '高性价比',
+                            '不贵'
+                        ],
+                        contents: [],
+                        number: 0
+                    },
+                    {
+                        feature: [
+                            '物流快',
+                            '漂亮',
+                            '充电很快',
+                            '挺舒服'
+                        ],
+                        contents: [],
+                        number: 0
+                    },
+                    {
+                        feature: [
+                            '全网通',
+                            '音响棒',
+                            '运行速度'
+                        ],
+                        contents: [],
+                        number: 0
+                    }
+                ],
+                badComments: [
+                    {
+                        feature: [
+                            '死机',
+                            '碎',
+                            '碎屏',
+                            '不舒服'
+                        ],
+                        contents: [
+                            {
+                                title: '上午死机到现在，怎么都开不了机，什么电源键+音量减',
+                                all: '上午<span style="background-color: #F56C6C;color:white;font-weight: 500;font-size:14px;margin-left: 3px;margin-right:3px">死机</span>到现在，怎么都开不了机，什么电源键+音量减，全没用。插上充电器也没亮灯，三星品质，越来越差劲，亲们想买的别买了，买了还在七天内的赶紧退货吧，别像我这样用了一个多月以后想退也不能退了。'
+                            },
+                            {
+                                title: '什么手机了，屏刚回来7天就碎了，说的是防爆膜，一下',
+                                all: '什么手机了，屏刚回来7天就<span style="background-color: #F56C6C;color:white;font-weight: 500;font-size:14px;margin-left: 3px;margin-right:3px">碎</span>了，说的是防爆膜，一下就<span style="background-color: #F56C6C;color:white;font-weight: 500;font-size:14px;margin-left: 3px;margin-right:3px">碎</span>，跟她们消费者，维权打电话，服务态度就是推推推，说他管不了，不归他管。 大家别买了，一下就<span style="background-color: #F56C6C;color:white;font-weight: 500;font-size:14px;margin-left: 3px;margin-right:3px">碎</span>。 真的不信你试试，'
+                            },
+                            {
+                                title: '屏幕真的超级脆，你想象不到的脆，我买回来没多少天，',
+                                all: '屏幕真的超级脆，你想象不到的脆，我买回来没多少天，买之前看评论说屏幕很脆，就千小心完小心的，贴了钢化膜，买了手机壳，结果就在刚刚，拿着手机坐在地上玩手机，一个不小心，掉了，钢化膜揭开，还是<span style="background-color: #F56C6C;color:white;font-weight: 500;font-size:14px;margin-left: 3px;margin-right:3px">碎</span>了，这个高度，盘腿坐在地上，木地板，并不高，连同着我的心一起<span style="background-color: #F56C6C;color:white;font-weight: 500;font-size:14px;margin-left: 3px;margin-right:3px">碎</span>了，换个屏幕又要花好多钱，感觉买了个神仙爷爷供着。'
+                            }
+                        ],
+                        number: 0
+                    },
+                    {
+                        feature: [
+                            '太贵',
+                            '服务差',
+                            '体验很差',
+                            '像素差'
+                        ],
+                        contents: [
+                            {
+                                title: '凑活着用吧，太贵，服务差，就这德行',
+                                all: '凑活着用吧，<span style="background-color: #F56C6C;color:white;font-weight: 500;font-size:14px;margin-left: 3px;margin-right:3px">太贵</span>，服务差，就这德行'
+                            },
+                            {
+                                title: '先手机用三天，手机开关机键无会弹力。',
+                                all: '先手机用三天，手机开关机键无会弹力。 换换货后，用了一周，充电是显示用的不是原厂充电器，客服要求三星售后鉴定。本次购物<span style="background-color: #F56C6C;color:white;font-weight: 500;font-size:14px;margin-left: 3px;margin-right:3px">体验很差</span>，购买碎屏险，后来告知，不是原厂屏幕'
+                            },
+                        ],
+                        number: 0
+                    }
+                ],
+                itemInfo: {
+                    sellerMarkets: ['jd'],
+                    prices: [
+                        ["07-17",[[${price}]] + Math.round(Math.random()*500)],
+                        ["07-18",[[${price}]] + Math.round(Math.random()*500)],
+                        ["07-19",[[${price}]] + Math.round(Math.random()*500)],
+                        ["07-20",[[${price}]] + Math.round(Math.random()*500)],
+                        ["07-21",[[${price}]] + Math.round(Math.random()*500)],
+                        ["07-22",[[${price}]] + Math.round(Math.random()*500)],
+                        ["07-23",[[${price}]] + Math.round(Math.random()*500)],
+                        ["07-24",[[${price}]] + Math.round(Math.random()*500)],
+                        ["07-25",[[${price}]] + Math.round(Math.random()*500)],
+                        ["07-26",[[${price}]] + Math.round(Math.random()*500)],
+                        ["07-27",[[${price}]] + Math.round(Math.random()*500)],
+                        ["07-28",[[${price}]] + Math.round(Math.random()*500)],
+                        ["07-29",[[${price}]] + Math.round(Math.random()*500)],
+                        ["07-30",[[${price}]] + Math.round(Math.random()*500)],
+                        ["08-01",[[${price}]] + Math.round(Math.random()*500)],
+                        ["08-02", [[${price}]]]
+                    ],
+                    latestPrices:[
+                        ["07-26",1 + Math.round(Math.random()*500)],
+                        ["07-27",4 + Math.round(Math.random()*500)],
+                        ["07-28",5 + Math.round(Math.random()*500)],
+                        ["07-29",7 + Math.round(Math.random()*500)],
+                        ["07-30",10 + Math.round(Math.random()*500)],
+                        ["07-31",13 + Math.round(Math.random()*500)],
+                        ["08-01",10 + Math.round(Math.random()*500)],
+                        ["08-02",13 + Math.round(Math.random()*500)]
+                    ],
+                    keyFeatures: [
+                        'Dolby Atmos speakers',
+                        'AR Emoji',
+                        'Secondary 12-megapixel telephoto camera',
+                        'Snapdragon 845/Exynos 9810',
+                        '6.2-inch quad-HD+ OLED display'
+                    ],
+                    pros: [
+                        'Feels great for a big phone',
+                        'The OLED display is great and highly customisable',
+                        'Numerous camera features on offer'
+                    ],
+                    cons: [
+                        'Iterative upgrade',
+                        'AR Emoji are just bad',
+                        'Some lag with Samsung’s software'
+                    ],
+                    brand: {
+                        cn: '三星电子',
+                        en: 'Samsung Electronics',
+                        code: 'samsung_electronics',
+                        introduction: '三星电子（朝鲜语：삼성전자／三星電子，英语：Samsung Electronics），三星集团子公司，韩国最大的消费电子产品及电子组件制造商，亦是全球最大的信息技术公司。2017年，三星电子在Interbrand全球品牌排行榜中名列第六位，连续第六年进入世界品牌前十强。在美国《财富》杂志2015年、2016年评选的财富世界500强排行榜中第13名。2016年，根据品牌咨询机构 Reputation Institute 调查，为美国最受尊敬科技企业第2名。',
+                        rate: 3.9
+                    },
+                    name: {
+                        cn: [[${zhName}]],
+                        en: '',
+                        code: [[${itemModel}]],
+                    },
+                    basicImages: [
+                        [[${primaryImage}]]
+                    ],
+                }
+            }
+        },
+        created () {
+        },
+        computed: {
+        },
+        methods: {
+            search () {
+                if(app.keyword != null){
+                    window.location.href = 'search?keyword=' + app.keyword;
+                }
+            },
+            getImageList () {
+                axios({
+                    url: '/getImageListByItemId',
+                    method: 'POST',
+                    params: {
+                        id: [[${id}]]
+                    }
+                })
+                    .then( value=> {
+                        this.$set(this.itemInfo, 'basicImages', value.data.data.split(","))
+                    })
+                    .catch(function (reason) {
+                        console.log(reason);
+                    });
+            },
+            getComments () {
+                axios({
+                    url: '/getItemComments',
+                    method: 'POST',
+                    params: {
+                        id: [[${id}]]
+                    }
+                })
+                    .then(res => {
+                        this.loading = false;
+                        this.comments = res.data.data;
+                        console.log(this.comments);
+                        this.addComment();
+
+                    })
+                    .catch(err => {
+                        this.loading = false;
+                        this.$message.error(err);
+                    })
+            },
+            addComment () {
+                for(let i = 0, len = this.comments.length; i < len; i++) {
+                    for(let m = 0, mlen = this.goodComments.length; m < mlen; m++) {
+                        for(let n = 0, nlen = this.goodComments[m].feature.length; n <nlen; n++) {
+                            if(this.comments[i].content.indexOf(this.goodComments[m].feature[n]) !== -1) {
+                                let text = this.comments[i].content;
+                                let title = this.comments[i].content.slice(0,30);
+
+                                let all = '';
+                                while(text.indexOf(this.goodComments[m].feature[n]) != -1) {
+                                    let flag = text.indexOf(this.goodComments[m].feature[n]);
+                                    // console.log(flag);
+                                    all += text.slice(0,flag) + '<span style="background-color: #67C23A;color:white;font-weight: 500;font-size:14px;margin-left: 3px;margin-right:3px">' + this.goodComments[m].feature[n] + '</span>';
+                                    flag = flag + this.goodComments[m].feature[n].length;
+                                    text = text.substring(flag);
+                                }
+                                all += text;
+                                this.goodComments[m].contents.push({
+                                    'title': title,
+                                    'all': all
+                                })
+                                this.goodComments[m].number += 1;
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        mounted () {
+            this.getImageList()
+            this.loading = true
+            this.getComments()
+        }
+    });
+
+
+    let totalPriceChart = echarts.init(document.getElementById('totalPriceChart'));
+
+    // 指定图表的配置项和数据
+    let totalVolumeChartOption = {
+        title: {
+            text: '历史总销量',
+            left: 'center',
+            top: 20,
+            textStyle: {
+                fontWeight: 'normal'
+            },
+            top: 5
+        },
+
+        tooltip : {
+            trigger: 'item',
+            formatter: "{a} <br/>{b} : {c} ({d}%)"
+        },
+
+        visualMap: {
+            show: false,
+            min: 80,
+            max: 600,
+            inRange: {
+                colorLightness: [0, 1]
+            }
+        },
+        series : [
+            {
+                name:'总销量',
+                type:'pie',
+                radius : '75%',
+                center: ['50%', '50%'],
+                data:[
+                    {value:335, name:'iPhone X'},
+                    {value:310, name:'Huawei \nMate 10 Pro'},
+                    {value:274, name:'Galaxy S9+'},
+                    {value:235, name:'iPhone 8'},
+                    {value:400, name:'iPhone 8 \nPlus'}
+                ].sort(function (a, b) { return a.value - b.value; }),
+                roseType: 'radius',
+                label: {
+                    normal: {
+                        textStyle: {
+                            color: '#FFF',
+                            distance: 2
+
+                        },
+                        position: 'inside'
+                    }
+
+                },
+                labelLine: {
+                    normal: {
+                        lineStyle: {
+                            color: '#000'
+                        },
+                        smooth: 0.2,
+                        length: 10,
+                        length2: 20
+                    }
+                },
+                itemStyle: {
+                    normal: {
+                        color: '#409EFF',
+                    }
+                },
+
+                animationType: 'scale',
+                animationEasing: 'elasticOut',
+                animationDelay: function (idx) {
+                    return Math.random() * 200;
+                }
+            }
+        ]
+    };
+
+    // 使用刚指定的配置项和数据显示图表。
+    totalPriceChart.setOption(totalVolumeChartOption);
+
+    let priceChart = echarts.init(document.getElementById('priceChart'));
+
+    let dateList = app.itemInfo.prices.map(function (item) {
+        return item[0];
+    });
+    let priceList = app.itemInfo.prices.map(function (item) {
+        return item[1];
+    });
+
+    priceChartOption = {
+
+        // Make gradient line here
+
+        title: {
+            left: 'center',
+            text: '近期价格走势',
+            textStyle: {
+                fontWeight: 'normal',
+
+            }
+        },
+        tooltip: {
+            trigger: 'axis'
+        },
+        xAxis: {
+            data: dateList
+        },
+        yAxis: {
+            splitLine: {show: false}
+        },
+
+        series: {
+            type: 'line',
+            showSymbol: false,
+            data: priceList
+        }
+    };
+    priceChart.setOption(priceChartOption);
+
+
+
+    let latestPriceChart = echarts.init(document.getElementById('latestPriceChart'));
+
+    let latestDateList = app.itemInfo.latestPrices.map(function (item) {
+        return item[0];
+    });
+    let latestPriceList = app.itemInfo.latestPrices.map(function (item) {
+        return item[1];
+    });
+
+    latestPriceChartOption = {
+
+        // Make gradient line here
+
+        title: {
+            left: 'center',
+            text: '近期销量',
+            textStyle: {
+                fontWeight: 'normal'
+            },
+            top: 5
+        },
+        tooltip: {
+            trigger: 'axis'
+        },
+        xAxis: {
+            data: latestDateList
+        },
+        yAxis: {
+            splitLine: {show: false},
+            min: 0
+        },
+
+        series: {
+            type: 'line',
+            showSymbol: false,
+            data: latestPriceList,
+            itemStyle: {
+                normal: {
+                    color: '#409EFF',
+                }
+            }
+        }
+    };
+    latestPriceChart.setOption(latestPriceChartOption);
+
+
+
+    let colorChoose = echarts.init(document.getElementById('colorChoose'));
+    let color = ['黑色', '白色', '星空灰'];
+    let colorNum = [300, 182, 90];
+    let maxNum = 400;
+    let shadow = [];
+    for (let i = 0; i < colorNum.length; i++) {
+        shadow.push(colorNum);
+    }
+    let colorChooseOption = {
+        // title: {
+        //     text: '',
+        //     subtext: ''
+        // },
+        xAxis: {
+            data: color,
+            axisLabel: {
+                inside: true,
+                textStyle: {
+                    color: '#fff'
+                }
+            },
+            axisTick: {
+                show: false
+            },
+            axisLine: {
+                show: false
+            },
+            z: 10
+        },
+        yAxis: {
+            axisLine: {
+                show: false
+            },
+            axisTick: {
+                show: false
+            },
+            axisLabel: {
+                textStyle: {
+                    color: '#999'
+                }
+            }
+        },
+        dataZoom: [
+            {
+                type: 'inside'
+            }
+        ],
+        series: [
+            { // For shadow
+                type: 'bar',
+                itemStyle: {
+                    normal: {color: 'rgba(0,0,0,0.0)'}
+                },
+                barGap:'-100%',
+                barCategoryGap:'40%',
+                data: shadow,
+                animation: false
+            },
+            {
+                type: 'bar',
+                itemStyle: {
+                    normal: {
+                        color: new echarts.graphic.LinearGradient(
+                            0, 0, 0.6, 1,
+                            [
+                                {offset: 0, color: '#225fb8'},
+                                {offset: 0.7, color: '#225fb8'},
+                                {offset: 1, color: '#225fb8'}
+                            ]
+                        )
+                    },
+                    emphasis: {
+                        color: new echarts.graphic.LinearGradient(
+                            0, 0, 0, 1,
+                            [
+                                {offset: 0, color: '#5799d9'},
+                                {offset: 0.5, color: '#4b86c6'},
+                                {offset: 1, color: '#4176b3'}
+                            ]
+                        )
+                    }
+                },
+                data: colorNum
+            }
+        ]
+    };
+    colorChoose.setOption(colorChooseOption);
+
+
+
+    let configChoose = echarts.init(document.getElementById('configChoose'));
+    let config = ['64GB', '32GB', '128GB'];
+    // let data = ''
+    // axios({
+    //     url: '',
+    //     method: 'POST',
+    //     params:{
+    //         category: ''
+    //     }
+    //         .then(res => {
+    //             data = res.data.data
+    //     })
+    // })
+    let buyer = [300, 182, 90];
+    let maxBuyer = 400;
+    let dataShadow = [];
+    for (let i = 0; i < buyer.length; i++) {
+        dataShadow.push(maxBuyer);
+    }
+    let configChooseOption = {
+        // title: {
+        //     text: '',
+        //     subtext: ''
+        // },
+        xAxis: {
+            data: config,
+            axisLabel: {
+                inside: true,
+                textStyle: {
+                    color: '#fff'
+                }
+            },
+            axisTick: {
+                show: false
+            },
+            axisLine: {
+                show: false
+            },
+            z: 10
+        },
+        yAxis: {
+            axisLine: {
+                show: false
+            },
+            axisTick: {
+                show: false
+            },
+            axisLabel: {
+                textStyle: {
+                    color: '#999'
+                }
+            }
+        },
+        dataZoom: [
+            {
+                type: 'inside'
+            }
+        ],
+        series: [
+            { // For shadow
+                type: 'bar',
+                itemStyle: {
+                    normal: {color: 'rgba(0,0,0,0.0)'}
+                },
+                barGap:'-100%',
+                barCategoryGap:'40%',
+                data: dataShadow,
+                animation: false
+            },
+            {
+                type: 'bar',
+                itemStyle: {
+                    normal: {
+                        color: new echarts.graphic.LinearGradient(
+                            0, 0, 0.6, 1,
+                            [
+                                {offset: 0, color: '#409EFF'},
+                                {offset: 0.7, color: '#409EFF'},
+                                {offset: 1, color: '#409EFF'}
+                            ]
+                        )
+                    },
+                    emphasis: {
+                        color: new echarts.graphic.LinearGradient(
+                            0, 0, 0, 1,
+                            [
+                                {offset: 0, color: '#5799d9'},
+                                {offset: 0.5, color: '#4b86c6'},
+                                {offset: 1, color: '#4176b3'}
+                            ]
+                        )
+                    }
+                },
+                data: buyer
+            }
+        ]
+    };
+    let zoomSize = 6;
+    configChoose.setOption(configChooseOption);
+    // Enable data zoom when user click bar.
+</script>
+</html>

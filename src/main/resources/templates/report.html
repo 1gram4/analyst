@@ -1,0 +1,1124 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <!-- import CSS -->
+    <meta charset="UTF-8">
+    <!-- import CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css"> <!-- #409EFF -->
+    <link rel="stylesheet" href="../report.css">
+    <title>category</title>
+</head>
+<body>
+<div id="app">
+    <el-container>
+        <el-header style="border-bottom: #409EFF">
+            <el-row type="flex" justify="center">
+                <el-col :span="12">
+                    <el-row :gutter="20">
+                        <el-col :span="4">
+                            <span style="color:#409EFF;font-size: 30px;height: 40px;">智购</span>
+                        </el-col>
+                        <el-col :span='inputLength'>
+                            <el-input prefix-icon="el-icon-search" placeholder="请输入内容" v-model="keyword" @keyup.native.enter="search" clearable></el-input>
+                        </el-col>
+                        <el-col :span="2" :offset="6">
+                            <el-button type="text">清单</el-button>
+                        </el-col>
+                        <el-col :span="2">
+                            <el-button type="text">排行</el-button>
+                        </el-col>
+                    </el-row>
+                </el-col>
+            </el-row>
+        </el-header>
+
+        <el-main>
+            <el-row type="flex">
+                <el-col :span="24" style="padding-bottom:10px;">
+                    <span style="font-size:32px;font-weight: bold;color:rgba(0,0,0,0.95);">{{ category }}品类导购报告 &nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #409EFF; font-size: 18px"> 生成时间： {{ time }}</span> </span>
+                </el-col>
+            </el-row>
+            <el-row type="flex">
+                <el-col :span="15" justify="center">
+                    <el-card shadow="hover">
+                        <div class="header">
+                            <span>市场占比(百分比%)</span>
+                        </div>
+                        <div id="topTenBrand" style="width:100%;height:300px;">
+                        </div>
+                    </el-card>
+                </el-col>
+                <el-col :span="9" justify="center">
+                    <el-card shadow="hover">
+                        <div class="header">
+                            <span>搜索关键词</span>
+                        </div>
+                        <div id="attention" style="width:100%;height:300px;">
+                        </div>
+                    </el-card>
+                </el-col>
+            </el-row>
+            <el-row type="flex">
+                <el-col :span="10" justify="center">
+                    <el-card shadow="hover">
+                        <div class="header">
+                            <span>品牌的平均价格</span>
+                        </div>
+                        <div id="average" style="width:100%;height:400px;">
+                        </div>
+                    </el-card>
+                </el-col>
+                <el-col :span="7" justify="center">
+                    <el-card shadow="hover">
+                        <div class="header">
+                            <!--<span>品牌的商品种类数</span>-->
+                            <span>各品牌的销量</span>
+                        </div>
+                        <div id="saleNumber" style="width:100%;height:400px;">
+                        </div>
+                    </el-card>
+                </el-col>
+                <el-col :span="7" justify="center">
+                    <el-card shadow="hover">
+                        <div class="header">
+                            <span>前三名关键词</span>
+                        </div>
+                        <div id="hot" style="width:100%;height:400px;padding-left: 50px;">
+                        </div>
+                    </el-card>
+                </el-col>
+            </el-row>
+            <el-row type="flex">
+                <el-col :span="15" justify="center">
+                    <el-card shadow="hover">
+                        <div class="header">
+                            <span>按价格聚类统计{{ category }}类别下的商品数</span>
+                        </div>
+                        <div id="priceChart" style="width:90%;height:300px;">
+                        </div>
+                    </el-card>
+                </el-col>
+                <el-col :span="9" justify="center" >
+                    <el-card shadow="hover">
+                        <div class="header">
+                            <span>不同价格的销量</span>
+                        </div>
+                        <div id="saleMostPrice" style="width:90%;height:300px;" shadow="hover">
+                        </div>
+                    </el-card>
+                </el-col>
+            </el-row>
+        </el-main>
+        <el-footer></el-footer>
+    </el-container>
+</div>
+</body>
+<!-- import axios -->
+<script src="https://unpkg.com/axios/dist/axios.js"></script>
+<!-- import Vue before Element -->
+<script src="https://unpkg.com/vue/dist/vue.js"></script>
+<!-- import JavaScript -->
+<script src="https://unpkg.com/element-ui/lib/index.js"></script>
+<!-- import ECharts -->
+<script src="https://cdn.bootcss.com/echarts/4.1.0.rc2/echarts.js"></script>
+<script src="http://data-visual.cn/datav/src/js/echarts/extension/echarts-wordcloud.min.js"></script>
+<script th:inline="none">
+    let categoryId = '4'
+    let app = new Vue({
+        el: '#app',
+        data() {
+            return {
+                inputLength: 10,
+                headerInputShow: true,
+                headerButtonShow: true,
+                keyword: '',
+                itemNum: [],
+                category: '手机',
+                marketPartName : [],
+                marketPartSale : [],
+                averageMoney : [],
+                saleTotal: [],
+                price: [],
+                sum: [],
+                moneySaleNum: [],
+                mainWords: [{
+                    name: this.category,
+                    value: 10000,
+                    textStyle: {
+                        normal: {
+                            color: '#0054b6'
+                        },
+                        emphasis: {
+                            color: '#409EFF'
+                        }
+                    }
+                }],
+                flag: [],
+                name: [],
+                priceData: [],
+                singlePriceData: []
+            }
+        },
+        created () {
+            axios({
+                url: '/getTopTenSaleAndItemNumByCategoryId',
+                method: 'POST',
+                params: {
+                    categoryId: categoryId
+                }
+            })
+                .then(res => {
+                    let _this = this
+                    res.data.data.forEach(function(item, index) {
+                        _this.marketPartName.push(item.brandName)
+                        _this.marketPartSale.push(item.brandSale)
+                        _this.averageMoney.push(item.average)
+                        let a = {
+                            value: item.itemNum,
+                            name: item.brandName
+                        }
+                        _this.itemNum.push(a)
+                        let yMax = 10000;
+                        let dataShadow = [];
+                        for (let i = 0; i < _this.marketPartSale.length; i++) {
+                            dataShadow.push(yMax);
+                        }
+                    })
+                    // console.log(this.itemNum)
+                    // let topTenBrand = echarts.init(document.getElementById('topTenBrand'));
+                    // topTenBrand.clear()
+                    // topTenBrand.setOption({
+                    //     // title: {
+                    //     //     text: '',
+                    //     //     subtext: ''
+                    //     // },
+                    //     xAxis: {
+                    //         data: xx,
+                    //         // data: this.marketPartName,
+                    //         axisLabel: {
+                    //             inside: true,
+                    //             textStyle: {
+                    //                 color: '#fff'
+                    //             }
+                    //         },
+                    //         axisTick: {
+                    //             show: false
+                    //         },
+                    //         axisLine: {
+                    //             show: false
+                    //         },
+                    //         z: 10
+                    //     },
+                    //     yAxis: {
+                    //         axisLine: {
+                    //             show: false
+                    //         },
+                    //         axisTick: {
+                    //             show: false
+                    //         },
+                    //         axisLabel: {
+                    //             textStyle: {
+                    //                 color: '#999'
+                    //             }
+                    //         }
+                    //     },
+                    //     dataZoom: [
+                    //         {
+                    //             type: 'inside'
+                    //         }
+                    //     ],
+                    //     series: [
+                    //         { // For shadow
+                    //             type: 'bar',
+                    //             itemStyle: {
+                    //                 normal: {color: 'rgba(0,0,0,0.0)'}
+                    //             },
+                    //             barGap:'-100%',
+                    //             barCategoryGap:'40%',
+                    //             data: yy,
+                    //             // data: this.dataShadow,
+                    //             animation: false
+                    //         },
+                    //         {
+                    //             type: 'bar',
+                    //             itemStyle: {
+                    //                 normal: {
+                    //                     color: new echarts.graphic.LinearGradient(
+                    //                         0, 0, 0.6, 1,
+                    //                         [
+                    //                             {offset: 0, color: '#409EFF'},
+                    //                             {offset: 0.7, color: '#409EFF'},
+                    //                             {offset: 1, color: '#409EFF'}
+                    //                         ]
+                    //                     )
+                    //                 },
+                    //                 emphasis: {
+                    //                     color: new echarts.graphic.LinearGradient(
+                    //                         0, 0, 0, 1,
+                    //                         [
+                    //                             {offset: 0, color: '#5799d9'},
+                    //                             {offset: 0.5, color: '#4b86c6'},
+                    //                             {offset: 1, color: '#4176b3'}
+                    //                         ]
+                    //                     )
+                    //                 }
+                    //             },
+                    //             data: this.marketPartSale
+                    //         }
+                    //     ]
+                    // });
+                    let colorChoose = echarts.init(document.getElementById('topTenBrand'));
+                    let color = ['华为','OPPO',' Vivo', '小米','苹果', '魅族', '三星','锤子','其他'];
+                    let colorNum = [24.2, 18.9, 14.2,9.8,13.2,9.8,2.2,2,1,7.4];
+                    let maxNum = 400;
+                    let shadow = [];
+                    for (let i = 0; i < colorNum.length; i++) {
+                        shadow.push(colorNum);
+                    }
+                    let colorChooseOption = {
+                        // title: {
+                        //     text: '',
+                        //     subtext: ''
+                        // },
+                        xAxis: {
+                            data: color,
+                            axisLabel: {
+                                inside: true,
+                                textStyle: {
+                                    color: '#fff'
+                                }
+                            },
+                            axisTick: {
+                                show: false
+                            },
+                            axisLine: {
+                                show: false
+                            },
+                            z: 10
+                        },
+                        yAxis: {
+                            axisLine: {
+                                show: false
+                            },
+                            axisTick: {
+                                show: false
+                            },
+                            axisLabel: {
+                                textStyle: {
+                                    color: '#999'
+                                }
+                            }
+                        },
+                        dataZoom: [
+                            {
+                                type: 'inside'
+                            }
+                        ],
+                        series: [
+                            { // For shadow
+                                type: 'bar',
+                                itemStyle: {
+                                    normal: {color: 'rgba(0,0,0,0.0)'}
+                                },
+                                barGap:'-100%',
+                                barCategoryGap:'40%',
+                                data: shadow,
+                                animation: false
+                            },
+                            {
+                                type: 'bar',
+                                itemStyle: {
+                                    normal: {
+                                        color: new echarts.graphic.LinearGradient(
+                                            0, 0, 0.6, 1,
+                                            [
+                                                {offset: 0, color: '#225fb8'},
+                                                {offset: 0.7, color: '#225fb8'},
+                                                {offset: 1, color: '#225fb8'}
+                                            ]
+                                        )
+                                    },
+                                    emphasis: {
+                                        color: new echarts.graphic.LinearGradient(
+                                            0, 0, 0, 1,
+                                            [
+                                                {offset: 0, color: '#5799d9'},
+                                                {offset: 0.5, color: '#4b86c6'},
+                                                {offset: 1, color: '#4176b3'}
+                                            ]
+                                        )
+                                    }
+                                },
+                                data: colorNum
+                            }
+                        ]
+                    };
+                    colorChoose.setOption(colorChooseOption);
+                    let average = echarts.init(document.getElementById('average'));
+                    averageOption = {
+                        // title: {
+                        //     text: '世界人口总量',
+                        //     subtext: '数据来自网络'
+                        // },
+                        tooltip: {
+                            trigger: 'axis',
+                            axisPointer: {
+                                type: 'shadow'
+                            }
+                        },
+                        grid: {
+                            left: '3%',
+                            right: '4%',
+                            bottom: '3%',
+                            containLabel: true
+                        },
+                        xAxis: {
+                            type: 'value',
+                            boundaryGap: [0, 0.01]
+                        },
+                        yAxis: {
+                            splitLine: {show: false},
+                            type: 'category',
+                            data: this.marketPartName
+                        },
+                        series: [
+                            {
+                                name: '2011年',
+                                type: 'bar',
+                                data: this.averageMoney,
+                                color: ['#63aef2']
+                            }
+                        ]
+                    };
+                    let iiiioption = {
+                        color: ['#63aef2'],
+                        title: {
+                            text: '',
+                            //textStyle: {
+                            //    color: '#fff'
+                            //}
+                        },
+                        tooltip: {
+                            trigger: 'axis',
+                            axisPointer: {
+                                type: 'shadow'
+                            },
+                            formatter: "{b} <br> 均价 {c}"
+                        },
+                        /*legend: {
+                            data: [date]
+                        },*/
+                        grid: {
+                            left: '4%',
+                            right: '4%',
+                            bottom: '2%',
+                            containLabel: true
+                        },
+                        xAxis: {
+                            type: 'value',
+                            boundaryGap: [0, 0.01],
+                            min: 0,
+                            max: 8000,
+                            interval: 20,
+                            axisLabel: {
+                                formatter: 'value',
+                                textStyle: {
+                                    //color: '#fff',
+                                    fontWeight: '80'
+                                }
+                            }
+                        },
+                        yAxis: {
+                            type: 'category',
+                            data: ['华为','OPPO',' Vivo', '苹果', '小米', '魅族', '三星','锤子'],
+                            axisLabel: {
+                                show: true,
+                                interval: 0,
+                                rotate: 0,
+                                margin: 10,
+                                inside: false,
+                                textStyle: {
+                                    // color: '#fff',
+                                    fontWeight: '50'
+                                }
+                            }
+                        },
+                        series: [{
+                            type: 'bar',
+                            label: {
+                                normal: {
+                                    show: true,
+                                    // formatter: '{c}',
+                                    formatter: function(v) {
+                                        var val = v.data;
+                                        if (val == 0) {
+                                            return '';
+                                        }
+                                        return val;
+                                    },
+                                    color: '#fff'
+                                }
+                            },
+                            data: [1904, 2316, 2258, 5476, 1237,1016, 3738, 1906]
+                        }]
+                    };
+                    average.setOption(iiiioption);
+
+                    let saleNumber = echarts.init(document.getElementById('saleNumber'));
+                    let iiii = [
+                        {value:21.2, name:'华为'},
+                        {value:16.5, name:'OPPO'},
+                        {value:14.2, name:'Vivo'},
+                        {value:13.2, name:'小米'},
+                        {value:9.8, name:'苹果'},
+                        {value:12.6, name:'其他'}
+                    ],
+                    numberOption = {
+                        title : {
+                            // text: '商品种类数目',
+                            // subtext: '纯属虚构',
+                            // x:'center'
+                        },
+                        tooltip : {
+                            trigger: 'item',
+                            // formatter: "{a} <br/>{b} : {c} ({d}%)",
+                        },
+                        legend: {
+                            x : 'left',
+                            y : 'bottom',
+                            // data: dataAxis
+                        },
+                        toolbox: {
+                            show : false,
+                            feature : {
+                                mark : {show: true},
+                                dataView : {show: true, readOnly: false},
+                                magicType : {
+                                    show: true,
+                                    type: ['pie', 'funnel']
+                                },
+                                restore : {show: true},
+                                saveAsImage : {show: true}
+                            }
+                        },
+                        calculable : false,
+                        series : [
+                            {
+                                name:'面积模式',
+                                type:'pie',
+                                radius : [30, 110],
+                                center : ['50%', '50%'],
+                                roseType : 'area',
+                                color: ['#93d2f6','#6ec1f2','#57b4f0','#419adf','#3076b8','#3887cb','#48a8ee','#66c2f9'],
+                                data: iiii
+                            }
+                        ]
+                    };
+                    saleNumber.setOption(numberOption);
+                });
+            axios({
+                url: '/getItemNumByPriceDis',
+                methods: 'POST',
+                params: {
+                    categoryId: categoryId
+                }
+            })
+                .then(res => {
+                    let _this = this
+                    res.data.data.forEach(function(item, index) {
+                        _this.moneySaleNum.push([item.sum,item.price])
+                        _this.saleTotal.push(item.saleTotal)
+                        _this.price.push(item.price)
+                        _this.sum.push(item.sum)
+                        let c = [0,index,item.sum]
+                        _this.priceData.push(c)
+                        let yMax = 10000;
+                        let dataShadow = [];
+                        for (let i = 0; i < _this.marketPartSale.length; i++) {
+                            dataShadow.push(yMax);
+                        }
+                    })
+                    console.log(this.priceData)
+
+                    let priceChart = echarts.init(document.getElementById('priceChart'));
+                    // let hours = ['1000以下', '1000-2000', '2000-3000', '3000-4000', '4000-5000', '5000-6000', '6000-7000','7000+'];
+                    let days = ['数目'];
+                    //let priceData = [[0,0,5],[0,1,10],[0,2,9],[0,3,6],[0,4,4],[0,5,8],[0,6,1],[0,7,7]]
+
+                    let newprice = ['1160','1782','2782','3644','4861','6699','8388'];
+                    let newpricedata = [[0,0,16],[0,1,24],[0,2,24],[0,3,14],[0,4,11],[0,5,2],[0,6,2]];
+                    priceData = newpricedata.map(function (item) {
+                        return [item[1], item[0], item[2]];
+                    });
+                    // priceData = this.priceData.map(function (item) {
+                    //     return [item[1], item[0], item[2]];
+                    // });
+                    let priceChartOption = {
+                        // title: {
+                        //     text: ''
+                        // },
+                        legend: {
+                            data: ['number'],
+                            left: 'right'
+                        },
+                        tooltip: {
+                            position: 'top',
+                            formatter: function (params) {
+                                return params.value[2];
+                            }
+                        },
+                        grid: {
+                            left: 10,
+                            bottom: 20,
+                            right: 25,
+                            containLabel: true
+                        },
+                        xAxis: {
+                            type: 'category',
+                            // data: this.price,
+                            data: newprice,
+                            boundaryGap: false,
+                            splitLine: {
+                                show: false,
+                                lineStyle: {
+                                    color: '#fff',
+                                    type: 'dashed'
+                                }
+                            },
+                            axisLine: {
+                                show: false
+                            }
+                        },
+                        yAxis: {
+                            type: 'category',
+                            data: days,
+                            // data: days,
+                            axisLine: {
+                                Chartshow: false
+                            }
+                        },
+                        series: [{
+                            name: 'Punch Card',
+                            type: 'scatter',
+                            symbolSize: function (val) {
+                                return val[2] * 3;
+                            },
+                            data: priceData,
+                            animationDelay: function (idx) {
+                                return idx * 5;
+                            },
+                            color: ['#63aef2']
+                        }]
+                    };
+                    priceChart.setOption(priceChartOption);
+
+                    let saleMostPrice = echarts.init(document.getElementById('saleMostPrice'));
+                    console.log(this.moneySaleNum);
+                    let hhh = [
+                        [28,1160],
+                        [29,1782],
+                        [24,2782],
+                        [9,3644],
+                        [5,4861],
+                        [3,6699],
+                        [2,8388]
+                    ]
+                    saleMostPriceOption = {
+                        tooltip: {
+                            trigger: 'item',
+                            formatter: "销量,价格区间({d}%)<br/> {c}",
+                            position: 'middle'
+                        },
+                        series: [{
+                            name: '库存情况',
+                            type: 'pie',
+                            radius: '68%',
+                            center: ['50%', '50%'],
+                            clockwise: false,
+                            data: hhh,
+                            label: {
+                                normal: {
+                                    textStyle: {
+                                        color: '#999',
+                                        fontSize: 14,
+                                    }
+                                }
+                            },
+                            labelLine: {
+                                normal: {
+                                    show: false
+                                }
+                            },
+                            itemStyle: {
+                                normal: {
+                                    borderWidth: 4,
+                                    borderColor: '#ffffff',
+                                },
+                                emphasis: {
+                                    borderWidth: 0,
+                                    shadowBlur: 10,
+                                    shadowOffsetX: 0,
+                                    shadowColor: 'rgba(0, 0, 0, 0.5)'
+                                }
+                            }
+                        }],
+                        color: [
+                            '#3b90e3',
+                            '#66c2f9',
+                            '#93d6fb',
+                            '#4aaff8',
+                            '#bde4f9'
+                        ],
+                        backgroundColor: '#fff'
+                    };
+                    saleMostPrice.setOption(saleMostPriceOption);
+                });
+            axios({
+                url: '/getFocusByCategoryId',
+                methods: 'POST',
+                params: {
+                    categoryId: categoryId
+                }
+
+            })
+                .then(res => {
+                    let _this = this
+                    res.data.data.forEach(function(item, index) {
+                        let b = {
+                            name: item.name,
+                            flag: item.flag
+                        }
+                        _this.flag.push(item.flag)
+                        _this.name.push(item.name)
+                        _this.mainWords.push(b);
+                    })
+                    let myData = []
+                    let lineData = [10, 10, 10]
+                    let thisYear = []
+
+                    for (let i=0;i<3;i++)
+                    {
+                        myData.push(this.name[i])
+                        thisYear.push(this.flag[i])
+                    }
+                    let thisYearData = {
+                        1: thisYear
+                    }
+                    // console.log(myData)
+                    // console.log(thisYearData)
+                    let attention = echarts.init(document.getElementById('attention'));
+                    let main = [
+                        {
+                            name: '全网通',
+                            value: 6000
+                        },
+                        {
+                            name: '人脸识别',
+                            value: 8000
+                        },
+                        {
+                            name: '快速充电',
+                            value: 6181
+                        }, {
+                            name: '游戏',
+                            value: 7886
+                        },
+                        {
+                            name: '全面屏',
+                            value: 6181
+                        },
+                        {
+                            name: '苹果',
+                            value: 4386
+                        },
+                        {
+                            name: 'AI拍照',
+                            value: 6181
+                        },
+                        {
+                            name: '光学防抖',
+                            value: 5386
+                        },
+                        {
+                            name: '曲面屏',
+                            value: 5386
+                        },
+                        {
+                            name: '双卡双待',
+                            value: 5386
+                        },
+                        {
+                            name: '双摄',
+                            value: 5386
+                        }
+
+                    ]
+                    attentionOption = {
+                        title:{
+                            // text:"搜索关键词热度 ",
+                            // link:'https://github.com/ecomfe/echarts-wordcloud',
+                            // subtext: 'data-visual.cn',
+                            // sublink:'http://data-visual.cn',
+                        },
+                        tooltip: {},
+                        series: [{
+                            type: 'wordCloud',
+                            gridSize: 20,
+                            sizeRange: [8, 50],
+                            rotationRange: [0, 0],
+                            shape: 'rectangle',
+                            textStyle: {
+                                normal: {
+                                    color: function() {
+                                        // return '#409EFF'
+                                        return 'rgb(' + [
+                                            Math.round(40+Math.random() * 40),
+                                            Math.round(138+Math.random() * 60),
+                                            Math.round(235+Math.random() * 60)
+                                        ].join(',') + ')';
+                                    }
+                                },
+                                emphasis: {
+                                    shadowBlur: 10,
+                                    shadowColor: '#999'
+                                }
+                            },
+                            data: main
+                            // data: this.mainWords
+                        }]
+                    };
+                    attention.setOption(attentionOption);
+                    // 关键词热度
+                    let hot = echarts.init(document.getElementById('hot'));
+                    var category = ['人脸识别', '游戏', '全面屏'];
+                    var barData = [77, 48, 21];
+                    // var lineData = [125, 125, 125]
+                    var outlineData = [150, 150, 150]
+
+                    option = {
+                        //backgroundColor: '#000',
+                        grid: [{
+                            left: '0',
+                            bottom: '0',
+                            top: 0,
+                            right: 30
+                        }],
+                        xAxis: {
+                            show: false
+                        },
+                        yAxis: {
+                            data: category,
+                            show: true,
+                            axisLabel: {
+                                inside: true,
+                                verticalAlign: 'middle',
+                                lineHeight: 1500,
+                                color: 'rgba(0,0,0,1)',
+                                fontSize: 18
+                            },
+                            axisLine: {
+                                show: false
+                            }
+                        },
+                        series: [
+                            { // 背景图
+                                name: '',
+                                type: 'pictorialBar',
+                                backgroundColor: 'rgba(0,0,0,0)',
+                                symbol:'none',
+                                barWidth: 100,
+                                data: outlineData,
+                                barGap: '-100%',
+                                z: -100,
+                                symbolOffset: [0, '-30%'],
+                                barCategoryGap: 0,
+                                // animationEasing: 'elasticOut',
+                                animationDelay: function(dataIndex, params) {
+                                    return params.index * 30;
+                                }
+                            },
+                            { // 蓝柱下面方块
+                                name: '',
+                                type: 'pictorialBar',
+                                symbol: 'rect',
+                                barWidth: '3%',
+                                symbolOffset: [80, 0],
+                                itemStyle: {
+                                    normal: {
+                                        color: 'rgba(0,0,0,0)'
+                                    }
+                                },
+                                z: -11,
+                                symbolRepeat: true,
+                                symbolSize: 20,
+                                data: lineData,
+                                barGap: 20,
+                                barCategoryGap: 0,
+                                animationEasing: 'elasticOut',
+                                animationDelay: function(dataIndex, params) {
+                                    return params.index * 30;
+                                }
+                            },
+                            { // 蓝柱
+                                name: '', // blue bar
+                                type: 'pictorialBar',
+                                symbol: 'rect',
+                                barWidth: '3%',
+                                symbolOffset: [80, 0],
+                                itemStyle: {
+                                    normal: {
+                                        barBorderRadius: 5,
+                                        color: 'rgb(64, 158, 255)'
+                                    }
+                                },
+                                symbolRepeat: true,
+                                symbolSize: 20,
+                                // symbolClip: true,
+                                data: barData,
+                                label: {
+                                    normal: {
+                                        show: true,
+                                        formatter: function(value, index) {
+                                            console.log(arguments)
+                                            return `${value.value}`
+                                        },
+                                        position: 'right',
+                                        offset: [5, 0],
+                                        // offset: [0, 4],
+                                        color: 'rgb(64, 158, 255)',
+                                        fontSize: 18
+                                    }
+                                },
+                                animationEasing: 'elasticOut',
+                                animationDelay: function(dataIndex, params) {
+                                    return params.index * 30 * 1.1
+                                }
+                            }
+                        ],
+                        animation: true
+                    }
+                    // let a = [[1, 1]]
+                    // let timeLineData = [1]
+                    // let background = "rgba(0,0,0,0)"; // 背景
+                    // let option = {
+                    //     baseOption: {
+                    //         backgroundColor: background,
+                    //         timeline: {
+                    //             show: false,
+                    //             top: 0,
+                    //             data: []
+                    //         },
+                    //         legend : {
+                    //             top : '5%',
+                    //             left : '51%',
+                    //             itemWidth : 30,
+                    //             itemHeight : 22,
+                    //             itemGap: 300,
+                    //             icon : 'horizontal',
+                    //             textStyle : {
+                    //                 color : '#999',
+                    //                 fontSize : 14,
+                    //             },
+                    //             data: ['']
+                    //         },
+                    //         grid: [{
+                    //             show: false,
+                    //             left: '5%',
+                    //             top: '10%',
+                    //             bottom: '8%',
+                    //             containLabel: true,
+                    //             width: '37%'
+                    //         }, {
+                    //             show: false,
+                    //             left: '10%',
+                    //             top: '10%',
+                    //             bottom: '8%',
+                    //             width: '0%'
+                    //         }, {
+                    //             show: false,
+                    //             left: '20%',
+                    //             top: '10%',
+                    //             bottom: '8%',
+                    //             containLabel: true,
+                    //             width: '50%'
+                    //         }],
+                    //         xAxis: [{
+                    //             type: 'value',
+                    //             inverse: true,
+                    //             axisLine: {
+                    //                 show: false
+                    //             },
+                    //             axisTick: {
+                    //                 show: false
+                    //             },
+                    //             position: 'top',
+                    //             axisLabel: {
+                    //                 show: false
+                    //             },
+                    //             splitLine: {
+                    //                 show: false
+                    //             }
+                    //         }, {
+                    //             gridIndex: 1,
+                    //             show: false
+                    //         }, {
+                    //             gridIndex: 2,
+                    //             axisLine: {
+                    //                 show: false
+                    //             },
+                    //             axisTick: {
+                    //                 show: false
+                    //             },
+                    //             position: 'top',
+                    //             axisLabel: {
+                    //                 show: false
+                    //             },
+                    //             splitLine: {
+                    //                 show: false
+                    //             }
+                    //         }],
+                    //         yAxis: [{
+                    //             type: 'category',
+                    //             inverse: true,
+                    //             position: 'right',
+                    //             axisLine: {
+                    //                 show: false
+                    //             },
+                    //             axisTick: {
+                    //                 show: false
+                    //             },
+                    //             axisLabel: {
+                    //                 show: false
+                    //             },
+                    //             data: myData
+                    //         }, {
+                    //             gridIndex: 1,
+                    //             type: 'category',
+                    //             inverse: true,
+                    //             position: 'left',
+                    //             axisLine: {
+                    //                 show: false
+                    //             },
+                    //             axisTick: {
+                    //                 show: false
+                    //             },
+                    //             axisLabel: {
+                    //                 show: true,
+                    //                 textStyle: {
+                    //                     color: 'rgba(0,0,0,0.95)',
+                    //                     fontSize: 14
+                    //                 }
+                    //
+                    //             },
+                    //             data: myData.map(function(value) {
+                    //                 return {
+                    //                     value: value,
+                    //                     textStyle: {
+                    //                         align: 'center'
+                    //                     }
+                    //                 }
+                    //             })
+                    //         }, {
+                    //             gridIndex: 2,
+                    //             type: 'category',
+                    //             inverse: true,
+                    //             position: 'left',
+                    //             axisLine: {
+                    //                 show: false
+                    //             },
+                    //             axisTick: {
+                    //                 show: false
+                    //             },
+                    //             axisLabel: {
+                    //                 show: false
+                    //
+                    //             },
+                    //             data: myData
+                    //         }],
+                    //         series: []
+                    //
+                    //     },
+                    //     options: []
+                    // };
+                    // option.baseOption.timeline.data.push(timeLineData[0]);
+                    // option.options.push({
+                    //     series: [
+                    //         {
+                    //             type: 'pictorialBar',
+                    //             xAxisIndex: 2,
+                    //             yAxisIndex: 2,
+                    //             symbol: 'rect',
+                    //             itemStyle: {
+                    //                 normal: {
+                    //                     color: 'rgba(64,158,255,0.27)'
+                    //                 }
+                    //             },
+                    //             barWidth: 10,
+                    //             symbolRepeat: true,
+                    //             symbolSize: 14,
+                    //             data: lineData,
+                    //             barGap: '-100%',
+                    //             barCategoryGap: 0,
+                    //             label: {
+                    //                 normal: {
+                    //                     show: false,
+                    //                     formatter: (series) => {
+                    //                         return thisYearData[timeLineData[0]][series.dataIndex] + '%'
+                    //                     },
+                    //                     position: 'insideTopRight',
+                    //                     textStyle:{
+                    //                         color: 'rgba(0,0,0,0.95)',
+                    //                         fontSize: 20,
+                    //                     },
+                    //                     offset: [0, -15],
+                    //                 }
+                    //             },
+                    //             z: -100,
+                    //             animationEasing: 'elasticOut',
+                    //             animationDelay: function (dataIndex, params) {
+                    //                 return params.index * 30;
+                    //             }
+                    //         }, {
+                    //             name: '2018',
+                    //             type: 'pictorialBar',
+                    //             xAxisIndex: 2,
+                    //             yAxisIndex: 2,
+                    //             symbol: 'rect',
+                    //             barWidth: 10,
+                    //             itemStyle: {
+                    //                 normal: {
+                    //                     barBorderRadius: 5,
+                    //                     color: '#409eff'
+                    //                 }
+                    //             },
+                    //             symbolRepeat: true,
+                    //             symbolSize: 14,
+                    //             data: thisYearData[timeLineData[0]],
+                    //             animationEasing: 'elasticOut',
+                    //             animationDelay: function (dataIndex, params) {
+                    //                 return params.index * 30 * 1.1;
+                    //             }
+                    //         }
+                    //     ]
+                    // });
+                    hot.setOption(option);
+                })
+        },
+        methods: {
+            getTime () {
+                let now= new Date();
+                let year=now.getFullYear();
+                let month=now.getMonth() +  1;
+                let date=now.getDate();
+                return year + "年" + month + "月" + date + "日";
+            }
+        },
+        computed:{
+            time() {
+                return this.getTime()
+            }
+        }
+    })
+</script>
+</html>

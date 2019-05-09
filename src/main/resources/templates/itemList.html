@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <!-- import CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css"> <!-- #409EFF -->
+    <title>itemList</title>
+</head>
+<body>
+<div id="app">
+    <el-container>
+        <el-header style="border-bottom: #409EFF">
+            <el-row type="flex" justify="center">
+                <el-col :span="12">
+                    <el-row :gutter="20">
+                        <el-col :span="4">
+                            <span style="color:#409EFF;font-size: 30px;height: 40px;">智购</span>
+                        </el-col>
+                        <el-col :span="10">
+                            <el-input prefix-icon="el-icon-search" placeholder="请输入内容" v-model="keyword" @keyup.native.enter="search" clearable></el-input>
+                        </el-col>
+                        <el-col :span="2" :offset="6">
+                            <el-button type="text">清单</el-button>
+                        </el-col>
+                        <el-col :span="2">
+                            <el-button type="text">排行</el-button>
+                        </el-col>
+                    </el-row>
+                </el-col>
+            </el-row>
+        </el-header>
+        <el-main>
+            <el-row type="flex">
+                <el-col :span="12" :offset="4">
+
+                    <!-- main content -->
+                    <el-row type="flex" style="flex-direction: row; flex-wrap: wrap" :gutter="5">
+                        <el-col :span="8" v-for="(o, index) in 3" :key="o">
+                            <el-card :body-style="{ padding: '0px' }">
+                                <img src="~examples/assets/images/hamburger.png" class="image">
+                                <div style="padding: 14px;">
+                                    <span>好吃的汉堡</span>
+                                    <div class="bottom clearfix">
+                                        <time class="time">{{ currentDate }}</time>
+                                        <el-button type="text" class="button">操作按钮</el-button>
+                                    </div>
+                                </div>
+                            </el-card>
+                        </el-col>
+                    </el-row>
+                    <!-- basic info card -->
+
+                    <!-- end main content -->
+                </el-col>
+                <el-col :span="7" :offset="1">
+                    <el-card>
+                        <div slot="header">
+                            <span>需求清单</span>
+                        </div>
+                        <div>
+                            <!--<el-row type="flex" style="flex-direction: row; flex-wrap: wrap;">-->
+                            <!--<el-tag v-for="tag in fulfilledTags"-->
+                            <!--:key="tag.name"-->
+                            <!--closable-->
+                            <!--:type="success"></el-tag>-->
+                            <!--</el-row>-->
+                            <!--<el-row type="flex"-->
+                            <!--justify="space-around"-->
+                            <!--v-for="tag in unfulfilledTags"-->
+                            <!--:key="tag.name"></el-row>-->
+                            <el-collapse v-model="activeDemandBlock">
+                                <el-collapse-item v-for="demand in demands">
+                                    <div slot="title">
+                                        {{demand.name}}：
+                                        <el-tag v-for="tag in demand.tags"
+                                                :key="tag.name"
+                                                closable></el-tag>
+                                    </div>
+                                </el-collapse-item>
+                            </el-collapse>
+                        </div>
+                    </el-card>
+                </el-col>
+            </el-row>
+
+        </el-main>
+        <el-footer>
+
+        </el-footer>
+    </el-container>
+</div>
+</body>
+<!-- import axios -->
+<script src="https://unpkg.com/axios/dist/axios.js"></script>
+<!-- import Vue before Element -->
+<script src="https://unpkg.com/vue/dist/vue.js"></script>
+<!-- import JavaScript -->
+<script src="https://unpkg.com/element-ui/lib/index.js"></script>
+<!-- import ECharts -->
+<script src="echarts.js"></script>
+<script th:inline="javascript">
+    var app = new Vue({
+        el: '#app',
+        data() {
+            return {
+                keyword: [[${keyword}]],
+                items: []
+            }
+        },
+        computed: {
+
+        },
+        methods: {
+            search () {
+                if(app.keyword != null){
+                    window.location.href = 'search?keyword=' + app.keyword;
+                }
+            }
+        }
+    });
+    axios({
+        url: '/getItemInfoByCname',
+        method: 'post',
+        params: {
+            cname: [[${keyword}]]
+        }
+    })
+        .then(function (response) {
+            app.items = response.result;
+            console.log(response.data.result);
+        })
+        .catch(function (err) {
+            console.log(err);
+        })
+</script>
+</html>

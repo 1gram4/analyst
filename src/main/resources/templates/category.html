@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <!-- import CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css"> <!-- #409EFF -->
+    <title>类别</title>
+</head>
+<body>
+<div id="app">
+    <el-container>
+        <el-header style="border-bottom: #409EFF">
+            <el-row type="flex" justify="center">
+                <el-col :span="12">
+                    <el-row :gutter="20">
+                        <el-col :span="4">
+                            <span style="color:#409EFF;font-size: 30px;height: 40px;">智购</span>
+                        </el-col>
+                        <el-col :span="10">
+                            <el-input prefix-icon="el-icon-search" placeholder="请输入内容" v-model="keyword"
+                                      @keyup.native.enter="search" clearable></el-input>
+                        </el-col>
+                        <el-col :span="2" :offset="6">
+                            <el-button type="text">清单</el-button>
+                        </el-col>
+                        <el-col :span="2">
+                            <el-button type="text">排行</el-button>
+                        </el-col>
+                    </el-row>
+                </el-col>
+            </el-row>
+        </el-header>
+        <el-main style="padding:0">
+            <el-row type="flex">
+                <el-col :span="18">
+
+                    <el-alert
+                            :title='"生成 " + keyword + " 品类数据报告"'
+                            type="success"
+                            description="我们根据收集的行业数据，自动生成品类数据报告，希望能给你一些帮助。">
+                    </el-alert>
+                    <div style="padding:10px 0 10px 0; float: right;">
+                        <el-button type="primary" @click="report">生成{{ keyword }}类别报告</el-button>
+                    </div>
+                </el-col>
+            </el-row>
+            <el-row type="flex">
+                <el-col :span="18">
+                    <!-- main content -->
+                    <el-row type="flex" style="flex-direction: row; flex-wrap: wrap" :gutter="5">
+                        <el-col :span="6" :key="index" v-for="(item, index) in itemsSelected">
+                            <el-card :body-style="{ padding: '0px' }" justify="center" style="margin-bottom: 10px;">
+                                <div style="text-align: center;padding-top:20px">
+                                    <img :src='"https://img11.360buyimg.com/n1/s450x450_" + item.imageGroup.split(",")[0]'
+                                         class="image" width="100%">
+                                </div>
+                                <div style="padding: 14px;">
+                                    <div style="height:25px;">
+                                        <p style="font-weight: bold;">{{ item.zhName }}</p>
+                                    </div>
+                                    <div style="margin-bottom: 10px">
+                                        <span style="color:#c73420; font-size: 8px;" v-if="item.priceList.length">￥<span
+                                                style="font-size: 16px;">{{ item.priceList[0].price || 0 }}</span></span>
+                                        <span style="font-size: 12px">（<span style="color:#c73420">{{ item.commentCountStr || '暂无' }}评论</span>)</span>
+                                    </div>
+                                    <div style="display: flex; flex-direction: row; flex-wrap: wrap; margin-bottom: 8px">
+                                        <el-tag size="small" style="margin-right: 4px;" v-for="ad in item.advance">{{ ad }}</el-tag>
+                                        <el-tag size="small" style="margin-right: 4px;" v-if="item.advance === null">人工智能</el-tag>
+                                        <el-tag size="small" style="margin-right: 4px;" v-if="item.advance === null">全面屏</el-tag>
+                                        <el-tag size="small" style="margin-right: 4px;" v-if="item.advance === null">前置闪光</el-tag>
+                                    </div>
+                                    <div style="display: flex; flex-direction: row; flex-wrap: wrap; margin-bottom: 8px">
+                                        <el-tag size="small" type="success" style="margin-right: 4px;" v-for="d in item.disAdvance">{{ d }}</el-tag>
+                                        <el-tag size="small" type="success" style="margin-right: 4px;" v-if="item.disAdvance === null">64GB ROM</el-tag>
+                                        <el-tag size="small" type="success" style="margin-right: 4px;" v-if="item.disAdvance === null">全网通</el-tag>
+                                        <el-tag size="small" type="success" style="margin-right: 4px;" v-if="item.disAdvance === null">晓龙 845</el-tag>
+                                    </div>
+                                    <div class="bottom" style="float: left;">
+                                        <el-button type="text" class="button" @click="buy">想买
+                                        </el-button>
+                                    </div>
+                                    <div class="bottom" style="float: right;left:20px;">
+                                        <el-button type="text" class="button" @click="singleAnalyst(item.skuId)">查看分析
+                                        </el-button>
+                                    </div>
+                                </div>
+                            </el-card>
+                        </el-col>
+                    </el-row>
+                    <!-- basic info card -->
+
+                    <!-- end main content -->
+                </el-col>
+                <el-col :span="6" :offset="1">
+                    <el-card>
+                        <div slot="header">
+                            <span>需求清单</span>
+                        </div>
+                        <div style="padding-bottom: 10px">
+                            <el-autocomplete
+                                    class="inline-input"
+                                    v-model="demandInput"
+                                    :fetch-suggestions="querySearch"
+                                    placeholder="请输入内容"
+                                    @select="handleSelect"
+                            ></el-autocomplete>
+                            <el-button type="primary" @click="recommend" v-loading.fullscreen.lock="fullscreenLoading">开始推荐</el-button>
+                        </div>
+                        <div style="display: flex; flex-direction: row; flex-wrap: wrap; margin-bottom: 10px">
+                            <el-tag size="small" style="margin-right: 4px;" v-for="(demand,index) in demandsSelected" :key="demand.content" closable @close="deleteDemand(index)">{{ demand.content }}</el-tag>
+                        </div>
+                        <el-collapse v-model="activeNames" @change="handleChange" :key="index"
+                                     v-for="(param,index) in paramGroupsSelected">
+                            <el-collapse-item :title="demand.content" :name="index">
+                                <div>待补充内容</div>
+                            </el-collapse-item>
+                        </el-collapse>
+                    </el-card>
+
+                </el-col>
+            </el-row>
+        </el-main>
+        <el-footer>
+
+        </el-footer>
+    </el-container>
+</div>
+</body>
+<!-- import axios -->
+<script src="https://unpkg.com/axios/dist/axios.js"></script>
+<!-- import Vue before Element -->
+<script src="https://unpkg.com/vue/dist/vue.js"></script>
+<!-- import JavaScript -->
+<script src="https://unpkg.com/element-ui/lib/index.js"></script>
+
+<script th:inline="javascript">
+    let categoryId = [[${categoryId}]]
+    new Vue({
+        el: '#app',
+        data() {
+            return {
+                keyword: [[${keyword}]],
+                items: [],
+                itemsSelected: [],
+                demands: [],
+                demandStrings: [],
+                demandInput: '',
+                demandsSelected: [],
+                activeNames: ['1'],
+                fullscreenLoading: false
+            }
+        },
+        created() {
+            this.getItems()
+            this.getDemands()
+        },
+        computed: {
+            price(index) {
+                return this.items[index].priceList[0].price
+            },
+            paramGroupsSelected() {
+
+            }
+        },
+        methods: {
+            buy() {
+                this.$message({
+                    type: 'success',
+                    message: '我们知道了！'
+                })
+            },
+            getItems() {
+                axios({
+                    url: '/items',
+                    method: 'GET',
+                    params: {
+                        categoryId: categoryId
+                    }
+                })
+                    .then(res => {
+                        let items = res.data.data;
+                        for(let i = 0, len = items.length; i < len; i++) {
+                            if (items[i].advance && items[i].disAdvance) {
+                                items[i].advance = items[i].advance.split(",");
+                                items[i].disAdvance = items[i].disAdvance.split(",")
+                            }
+                        }
+                        this.items = items;
+                        this.itemsSelected = this.items;
+                    })
+                    .catch(err => {
+                        this.$message.error(err)
+                    })
+            },
+            recommend() {
+                let flag = 0;
+                let full = false;
+                let game = false;
+                let selfie = false;
+                let s1, s2, s9, r15;
+                for(let i = 0, len = this.items.length; i < len; i++) {
+                    if (this.items[i].skuId === '7633417') {
+                        s1 = this.items[i]
+                    }
+                    if (this.items[i].skuId === '7419252') {
+                        s2 = this.items[i]
+                    }
+                    if (this.items[i].skuId === '6577495') {
+                        s9 = this.items[i]
+                    }
+                    if (this.items[i].skuId === '6773559') {
+                        r15 = this.items[i]
+                    }
+                }
+                for(let i = 0, len = this.demandsSelected.length; i < len; i++) {
+                    if (this.demandsSelected[i].content === '全面屏') {
+                        full = true
+                    }
+                    if (this.demandsSelected[i].content === '玩游戏') {
+                        game = true
+                    }
+                    if (this.demandsSelected[i].content === '自拍') {
+                        selfie = true
+                    }
+                }
+                
+                if(full && !game && !selfie) {
+                    this.fullscreenLoading = true;
+                    this.itemsSelected = []
+                    setTimeout(() => {
+                        this.itemsSelected.push(s1)
+                        this.itemsSelected.push(s2)
+                        this.itemsSelected.push(s9)
+                        this.itemsSelected.push(r15)
+                        this.fullscreenLoading = false;
+                    }, 2000);
+
+                }
+                if(full && game && !selfie) {
+                    this.fullscreenLoading = true;
+                    this.itemsSelected = []
+                    setTimeout(() => {
+                        this.itemsSelected.push(s9)
+                        this.itemsSelected.push(r15)
+                        this.fullscreenLoading = false;
+                    }, 2000);
+                }
+                if(full && game && selfie) {
+                    this.fullscreenLoading = true;
+                    this.itemsSelected = []
+                    setTimeout(() => {
+                        this.itemsSelected.push(r15)
+                        this.fullscreenLoading = false;
+                    }, 2000);
+                }
+                if (!full && !game && !selfie) {
+                    this.fullscreenLoading = true;
+                    this.itemsSelected = []
+                    setTimeout(() => {
+                        this.itemsSelected = this.items
+                        this.fullscreenLoading = false;
+                    }, 2000);
+                }
+            },
+            getDemands() {
+                axios({
+                    url: '/demands',
+                    methods: 'GET',
+                    params: {
+                        categoryId: categoryId
+                    }
+                })
+                    .then(res => {
+                        for(let i = 0, len = res.data.data.length; i < len; i++) {
+                            res.data.data[i].value = res.data.data[i].content
+                        }
+                        this.demands = res.data.data;
+                    })
+                    .catch(err => {
+                        this.$message.error(err)
+                    })
+            },
+            openFullScreen() {
+                this.fullscreenLoading = true;
+                setTimeout(() => {
+                    this.fullscreenLoading = false;
+                }, 2000);
+            },
+            querySearch(queryString, cb) {
+                let demands = this.demands;
+                let results = queryString ? demands.filter(this.createFilter(queryString)) : demands;
+                // 调用 callback 返回建议列表的数据
+                clearTimeout(this.timeout);
+                this.timeout = setTimeout(() => {
+                    cb(results);
+                }, 2000 * Math.random());
+            },
+            createFilter(queryString) {
+                return (state) => {
+                    return (state.value.indexOf(queryString) === 0);
+                };
+            },
+            handleSelect(item) {
+                let find = false;
+                let d = this.demandsSelected;
+                for (let i = 0, len = d.length; i < len; i++) {
+                    if (d[i].id === item.id) {
+                        find = true
+                    }
+                }
+                if (find) {
+                    this.$message.error('需求重复')
+                } else {
+                    this.demandsSelected.push(item)
+                }
+                this.demandInput = ''
+
+            },
+            deleteDemand(index) {
+                this.demandsSelected.splice(this.demandsSelected[index]);
+                this.$message({
+                    type: 'success',
+                    message: '删除成功'
+                })
+            },
+            search() {
+                if (this.keyword != null) {
+                    window.location.href = 'search?keyword=' + this.keyword;
+                }
+            },
+            report() {
+                window.location.href = 'report?keyword=' + this.keyword;
+            },
+            singleAnalyst(skuId) {
+                window.location.href = '/search?keyword=https://item.jd.com/' + skuId + '.html';
+            },
+            handleChange(val) {
+                console.log(val);
+            }
+        }
+    });
+
+</script>
+</html>
