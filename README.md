@@ -66,7 +66,6 @@ mvn package -Dmaven.test.skip=true dockerfile:build
 3. Run Analyst:
 
 ```shell
-docker run --name oj -p 8081:8081 -d kastnerorz/oj
 ```
 
 4. Open http://localhost:8081
